@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply box-border m-0 p-0;
+  }
+  body {
+    @apply font-poppins bg-[#f6f2ee] text-[#333];
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[#8b5e3c] hover:bg-[#7a4f30] text-white font-medium py-2.5 px-6 rounded-full transition-all duration-200 inline-block;
+  }
+  .btn-outline {
+    @apply border border-[#8b5e3c] text-[#8b5e3c] hover:bg-[#8b5e3c] hover:text-white font-medium py-2.5 px-6 rounded-full transition-all duration-200 inline-block;
+  }
+  .input-field {
+    @apply w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#8b5e3c] focus:border-transparent transition bg-white;
+  }
+  .section-title {
+    @apply text-3xl font-semibold text-[#333] mb-2;
+  }
+  .section-subtitle {
+    @apply text-gray-500 text-sm mb-8;
+  }
+}
