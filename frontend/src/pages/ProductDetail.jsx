@@ -1,17 +1,48 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { FaStar, FaShoppingCart, FaHeart, FaArrowLeft, FaShieldAlt, FaTruck, FaUndo } from 'react-icons/fa'
-import { products } from '../data/products'
+import { FaStar, FaShoppingCart, FaHeart, FaShieldAlt, FaTruck, FaUndo } from 'react-icons/fa'
+import { getProduct, getProducts } from '../api/products'
 import ProductCard from '../components/ProductCard'
+import { useCart } from '../context/CartContext'
 
 export default function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const product = products.find(p => p.id === Number(id))
+  const { addToCart } = useCart()
 
+  const [product, setProduct] = useState(null)
+  const [related, setRelated] = useState([])
+  const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [wishlisted, setWishlisted] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    setQuantity(1)
+    getProduct(id)
+      .then(data => {
+        setProduct(data)
+        return getProducts({ category: data.category })
+      })
+      .then(all => setRelated(all.filter(p => p.id !== Number(id)).slice(0, 4)))
+      .catch(() => setProduct(null))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  const handleAddToCart = () => {
+    const added = addToCart(product, quantity)
+    if (added) {
+      setAddedToCart(true)
+      setTimeout(() => setAddedToCart(false), 2000)
+    }
+  }
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#f6f2ee] font-poppins pt-20 flex items-center justify-center">
+      <div className="w-10 h-10 border-4 border-[#8b5e3c] border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
 
   if (!product) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f6f2ee] font-poppins pt-20">
@@ -23,13 +54,7 @@ export default function ProductDetail() {
     </div>
   )
 
-  const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-  const related = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4)
-
-  const handleAddToCart = () => {
-    setAddedToCart(true)
-    setTimeout(() => setAddedToCart(false), 2000)
-  }
+  const discount = Math.round(((product.original_price - product.price) / product.original_price) * 100)
 
   return (
     <div className="min-h-screen bg-[#f6f2ee] font-poppins pt-20">
@@ -66,7 +91,6 @@ export default function ProductDetail() {
               <h1 className="text-2xl sm:text-3xl font-semibold text-[#333] mt-1">{product.name}</h1>
             </div>
 
-            {/* Rating */}
             <div className="flex items-center gap-2">
               <div className="flex text-[#8b5e3c]">
                 {Array(5).fill(0).map((_, i) => (
@@ -76,10 +100,9 @@ export default function ProductDetail() {
               <span className="text-sm text-gray-500">{product.rating} ({product.reviews} reviews)</span>
             </div>
 
-            {/* Price */}
             <div className="flex items-center gap-3">
               <span className="text-3xl font-bold text-[#8b5e3c]">₹{product.price.toLocaleString('en-IN')}</span>
-              <span className="text-gray-400 line-through text-base">₹{product.originalPrice.toLocaleString('en-IN')}</span>
+              <span className="text-gray-400 line-through text-base">₹{product.original_price.toLocaleString('en-IN')}</span>
               <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">{discount}% OFF</span>
             </div>
 
@@ -87,30 +110,22 @@ export default function ProductDetail() {
 
             <hr className="border-gray-100" />
 
-            {/* Quantity */}
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-[#333]">Quantity:</span>
               <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                  className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-[#f6f2ee] transition-colors text-lg"
-                >−</button>
+                <button onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                  className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-[#f6f2ee] transition-colors text-lg">−</button>
                 <span className="w-10 text-center text-sm font-medium">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(q => q + 1)}
-                  className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-[#f6f2ee] transition-colors text-lg"
-                >+</button>
+                <button onClick={() => setQuantity(q => q + 1)}
+                  className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-[#f6f2ee] transition-colors text-lg">+</button>
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3">
               <button
                 onClick={handleAddToCart}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full font-medium text-sm transition-all duration-300 ${
-                  addedToCart
-                    ? 'bg-green-500 text-white'
-                    : 'bg-[#8b5e3c] hover:bg-[#7a4f30] text-white'
+                  addedToCart ? 'bg-green-500 text-white' : 'bg-[#8b5e3c] hover:bg-[#7a4f30] text-white'
                 }`}
               >
                 <FaShoppingCart />
@@ -126,19 +141,15 @@ export default function ProductDetail() {
               </button>
             </div>
 
-            <button
-              onClick={() => navigate('/checkout')}
-              className="w-full btn-outline py-3 text-sm font-medium"
-            >
+            <button onClick={() => navigate('/checkout')} className="w-full btn-outline py-3 text-sm font-medium">
               Buy Now
             </button>
 
-            {/* Trust Badges */}
             <div className="grid grid-cols-3 gap-3 pt-2">
               {[
                 { icon: FaTruck,      label: 'Free Shipping' },
-                { icon: FaShieldAlt, label: 'Secure Payment' },
-                { icon: FaUndo,      label: '7-Day Returns' },
+                { icon: FaShieldAlt,  label: 'Secure Payment' },
+                { icon: FaUndo,       label: '7-Day Returns' },
               ].map(({ icon: Icon, label }) => (
                 <div key={label} className="flex flex-col items-center gap-1 bg-[#f6f2ee] rounded-xl py-3 text-center">
                   <Icon className="text-[#8b5e3c] text-lg" />

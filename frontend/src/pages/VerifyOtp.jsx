@@ -20,6 +20,7 @@ export default function VerifyOtp() {
   const [resendMsg, setResendMsg] = useState('')
   const [countdown, setCountdown] = useState(60)
   const [canResend, setCanResend] = useState(false)
+  const [otpExpiry, setOtpExpiry] = useState(300) // 5 minutes in seconds
 
   const inputRefs = useRef([])
 
@@ -28,12 +29,25 @@ export default function VerifyOtp() {
     if (!email) navigate('/login')
   }, [email, navigate])
 
-  // Countdown timer
+  // Resend cooldown timer
   useEffect(() => {
     if (countdown <= 0) { setCanResend(true); return }
     const timer = setTimeout(() => setCountdown(c => c - 1), 1000)
     return () => clearTimeout(timer)
   }, [countdown])
+
+  // OTP expiry timer (5 minutes)
+  useEffect(() => {
+    if (otpExpiry <= 0) return
+    const timer = setTimeout(() => setOtpExpiry(c => c - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [otpExpiry])
+
+  const formatExpiry = (secs) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0')
+    const s = (secs % 60).toString().padStart(2, '0')
+    return `${m}:${s}`
+  }
 
   const handleChange = (index, value) => {
     if (!/^\d*$/.test(value)) return // digits only
@@ -84,10 +98,11 @@ export default function VerifyOtp() {
     setResendMsg('')
     setError('')
     try {
-      await resendOtp({ email, password })
+      await resendOtp({ email })
       setResendMsg('OTP resent successfully!')
       setCountdown(60)
       setCanResend(false)
+      setOtpExpiry(300)
       setOtp(['', '', '', '', '', ''])
       inputRefs.current[0]?.focus()
     } catch (err) {
@@ -204,7 +219,10 @@ export default function VerifyOtp() {
                 </button>
               )}
               <p className="text-xs text-gray-400">
-                OTP expires in 10 minutes
+                OTP expires in{' '}
+                <span className={`font-semibold ${otpExpiry <= 60 ? 'text-red-500' : 'text-[#8b5e3c]'}`}>
+                  {otpExpiry > 0 ? formatExpiry(otpExpiry) : 'Expired'}
+                </span>
               </p>
             </div>
 

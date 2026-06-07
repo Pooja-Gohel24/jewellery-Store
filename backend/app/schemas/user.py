@@ -13,6 +13,9 @@ class OTPRequest(BaseModel):
     email: EmailStr
     otp: str
 
+class ResendOTPRequest(BaseModel):
+    email: EmailStr
+
 class UserResponse(BaseModel):
     id: int
     name: str

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { FaTruck, FaGem, FaBoxOpen, FaStar, FaChevronLeft, FaChevronRight, FaQuoteLeft } from 'react-icons/fa'
+import { Link, useNavigate } from 'react-router-dom'
+import { FaTruck, FaGem, FaBoxOpen, FaStar, FaChevronLeft, FaChevronRight, FaQuoteLeft, FaShoppingCart } from 'react-icons/fa'
 import { GiRing, GiNecklace, GiChainedHeart, GiEarrings } from 'react-icons/gi'
 import { MdWatch } from 'react-icons/md'
+import { useCart } from '../context/CartContext'
+import { getProducts } from '../api/products'
 
 const heroSlides = [
   {
@@ -38,17 +40,6 @@ const features = [
   { icon: FaStar,    title: 'Highest Quality',   desc: 'Top craftsmanship' },
 ]
 
-const products = [
-  { id: 1, name: 'Gold Earrings',      price: '₹18,500', img: 'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=400&q=80' },
-  { id: 2, name: 'Diamond Ring',       price: '₹45,000', img: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80' },
-  { id: 3, name: 'Gold Necklace',      price: '₹32,000', img: 'https://images.unsplash.com/photo-1617038260897-41a1f14a3a1f?w=400&q=80' },
-  { id: 4, name: 'Pearl Bracelet',     price: '₹12,500', img: 'https://images.unsplash.com/photo-1573408301185-9519f94816b5?w=400&q=80' },
-  { id: 5, name: 'Kundan Necklace',    price: '₹28,000', img: 'https://images.unsplash.com/photo-1630019852942-f89202989a59?w=400&q=80' },
-  { id: 6, name: 'Diamond Pendant',    price: '₹22,000', img: 'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=400&q=80' },
-  { id: 7, name: 'Gold Bangles',       price: '₹15,000', img: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400&q=80' },
-  { id: 8, name: 'Ruby Ring',          price: '₹38,000', img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&q=80' },
-]
-
 const categories = [
   { icon: GiRing,      label: 'Rings' },
   { icon: GiNecklace,  label: 'Necklaces' },
@@ -64,7 +55,24 @@ const testimonials = [
 ]
 
 export default function Home() {
+  const { addToCart } = useCart()
+  const navigate = useNavigate()
+  const [addedIds, setAddedIds] = useState({})
   const [current, setCurrent] = useState(0)
+  const [featuredProducts, setFeaturedProducts] = useState([])
+
+  useEffect(() => {
+    getProducts().then(data => setFeaturedProducts(data.slice(0, 8))).catch(console.error)
+  }, [])
+
+  const handleAddToCart = (e, product) => {
+    e.preventDefault()
+    const added = addToCart(product)
+    if (added) {
+      setAddedIds(prev => ({ ...prev, [product.id]: true }))
+      setTimeout(() => setAddedIds(prev => ({ ...prev, [product.id]: false })), 1500)
+    }
+  }
 
   // Auto-scroll hero every 4 seconds
   useEffect(() => {
@@ -180,8 +188,8 @@ export default function Home() {
             <Link to="/shop" className="text-sm text-[#8b5e3c] hover:underline font-medium">View All →</Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-            {products.map(p => (
-              <div key={p.id} className="bg-[#f6f2ee] rounded-2xl overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow duration-300">
+            {featuredProducts.map(p => (
+              <Link key={p.id} to={`/product/${p.id}`} className="bg-[#f6f2ee] rounded-2xl overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow duration-300">
                 <div className="overflow-hidden h-40 sm:h-52">
                   <img
                     src={p.img}
@@ -191,10 +199,18 @@ export default function Home() {
                 </div>
                 <div className="p-3 sm:p-4 space-y-1">
                   <h4 className="font-medium text-[#333] text-xs sm:text-sm">{p.name}</h4>
-                  <p className="text-[#8b5e3c] font-semibold text-sm">{p.price}</p>
-                  <button className="w-full mt-1 sm:mt-2 text-xs btn-primary py-1.5 sm:py-2 px-3">Add to Cart</button>
+                  <p className="text-[#8b5e3c] font-semibold text-sm">₹{p.price.toLocaleString('en-IN')}</p>
+                  <button
+                    onClick={(e) => handleAddToCart(e, p)}
+                    className={`w-full mt-1 sm:mt-2 text-xs py-1.5 sm:py-2 px-3 rounded-full font-medium flex items-center justify-center gap-1.5 transition-all duration-300 ${
+                      addedIds[p.id] ? 'bg-green-500 text-white' : 'btn-primary'
+                    }`}
+                  >
+                    <FaShoppingCart className="text-xs" />
+                    {addedIds[p.id] ? 'Added!' : 'Add to Cart'}
+                  </button>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -209,13 +225,14 @@ export default function Home() {
           </div>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
             {categories.map(cat => (
-              <div
+              <button
                 key={cat.label}
+                onClick={() => navigate(`/shop?category=${cat.label}`)}
                 className="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-full flex flex-col items-center justify-center shadow-sm hover:shadow-md hover:bg-[#8b5e3c] group cursor-pointer transition-all duration-300"
               >
                 <cat.icon className="text-xl sm:text-2xl text-[#8b5e3c] group-hover:text-white transition-colors" />
                 <span className="text-xs font-medium text-[#333] group-hover:text-white mt-1 transition-colors">{cat.label}</span>
-              </div>
+              </button>
             ))}
           </div>
         </div>

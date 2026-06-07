@@ -1,11 +1,19 @@
 import { createContext, useContext, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from './AuthContext'
 
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const [cartItems, setCartItems] = useState([])
 
   const addToCart = (product, quantity = 1) => {
+    if (!user) {
+      navigate('/login')
+      return false
+    }
     setCartItems(prev => {
       const existing = prev.find(item => item.id === product.id)
       if (existing) {
@@ -17,6 +25,7 @@ export function CartProvider({ children }) {
       }
       return [...prev, { ...product, quantity }]
     })
+    return true
   }
 
   const removeFromCart = (id) => {

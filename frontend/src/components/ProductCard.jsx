@@ -1,14 +1,28 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FaStar, FaShoppingCart, FaHeart } from 'react-icons/fa'
+import { useCart } from '../context/CartContext'
 
 export default function ProductCard({ product }) {
-  const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  const { addToCart } = useCart()
+  const [added, setAdded] = useState(false)
+  const originalPrice = product.original_price ?? product.originalPrice
+  const discount = Math.round(((originalPrice - product.price) / originalPrice) * 100)
+
+  const handleAddToCart = (e) => {
+    e.preventDefault()
+    const added = addToCart(product)
+    if (added) {
+      setAdded(true)
+      setTimeout(() => setAdded(false), 1500)
+    }
+  }
 
   return (
     <div className="bg-white rounded-2xl overflow-hidden group hover:shadow-lg transition-all duration-300 relative">
 
       {/* Wishlist */}
-      <button className="absolute top-3 right-3 z-10 w-8 h-8 bg-white rounded-full shadow flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors">
+      <button className="absolute top-3 right-3 z-10 w-8 h-8 bg-white rounded-full shadow flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors" onClick={e => e.preventDefault()}>
         <FaHeart className="text-sm" />
       </button>
 
@@ -52,13 +66,18 @@ export default function ProductCard({ product }) {
         {/* Price */}
         <div className="flex items-center gap-2">
           <span className="text-[#8b5e3c] font-bold text-base">₹{product.price.toLocaleString('en-IN')}</span>
-          <span className="text-gray-400 line-through text-xs">₹{product.originalPrice.toLocaleString('en-IN')}</span>
+          <span className="text-gray-400 line-through text-xs">₹{originalPrice.toLocaleString('en-IN')}</span>
           <span className="text-green-600 text-xs font-medium">{discount}% off</span>
         </div>
 
         {/* Add to Cart */}
-        <button className="w-full btn-primary text-xs py-2 flex items-center justify-center gap-2 mt-1">
-          <FaShoppingCart /> Add to Cart
+        <button
+          onClick={handleAddToCart}
+          className={`w-full text-xs py-2 flex items-center justify-center gap-2 mt-1 rounded-full font-medium transition-all duration-300 ${
+            added ? 'bg-green-500 text-white' : 'btn-primary'
+          }`}
+        >
+          <FaShoppingCart /> {added ? 'Added!' : 'Add to Cart'}
         </button>
       </div>
     </div>

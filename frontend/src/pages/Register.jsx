@@ -64,7 +64,7 @@ export default function Register() {
     try {
       await register(form.name, form.email, form.password)
       setSuccess(true)
-      setTimeout(() => navigate('/login'), 1500)
+      setTimeout(() => navigate('/verify-otp', { state: { email: form.email, password: form.password } }), 1000)
     } catch (err) {
       setApiError(err.response?.data?.detail || 'Registration failed. Please try again.')
     } finally {
@@ -142,7 +142,7 @@ export default function Register() {
 
             {success && (
               <div className="bg-green-50 border border-green-200 text-green-600 text-sm px-4 py-3 rounded-lg flex items-center gap-2">
-                <span>✅</span> Account created! Redirecting to login...
+                <span>✅</span> Account created! OTP sent to your email...
               </div>
             )}
 

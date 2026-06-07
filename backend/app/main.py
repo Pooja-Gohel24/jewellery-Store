@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import Base, engine
-from app.models import user  # noqa: F401 — ensures model is registered
+from app.database import Base, engine, SessionLocal
+from app.models import user    # noqa: F401
+from app.models import product # noqa: F401
 from app.routes.auth import router as auth_router
+from app.routes.products import router as products_router
 
-# Create all tables on startup
+# Create all tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -13,17 +15,42 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS — allow React frontend
+import os
+
+allowed_origins = [
+    "http://localhost:5173",
+    os.getenv("FRONTEND_URL", ""),
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[o for o in allowed_origins if o],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Routes
 app.include_router(auth_router, prefix="/api")
+app.include_router(products_router, prefix="/api")
+
+
+@app.on_event("startup")
+def seed_products():
+    from app.models.product import Product
+    db = SessionLocal()
+    try:
+        if db.query(Product).count() == 0:
+            from seed_products import PRODUCTS
+            for data in PRODUCTS:
+                db.add(Product(**data))
+            db.commit()
+            print("[INFO] Products seeded.")
+    except Exception as e:
+        db.rollback()
+        print(f"[WARN] Seed skipped: {e}")
+    finally:
+        db.close()
+
 
 @app.get("/")
 def root():

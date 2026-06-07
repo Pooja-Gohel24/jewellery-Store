@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useCart } from '../context/CartContext'
 import { FiMenu, FiX, FiShoppingCart, FiUser, FiLogOut } from 'react-icons/fi'
 import { GiGemPendant } from 'react-icons/gi'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
+  const { totalItems } = useCart()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -60,9 +62,12 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-4">
           {user ? (
             <>
-              <span className="flex items-center gap-1.5 text-sm text-[#333] font-medium font-poppins">
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-1.5 text-sm text-[#333] font-medium font-poppins hover:text-[#8b5e3c] transition-colors"
+              >
                 <FiUser className="text-[#8b5e3c]" /> Hi, {user.name.split(' ')[0]}
-              </span>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-1.5 text-sm text-[#8b5e3c] hover:underline font-medium font-poppins"
@@ -82,7 +87,11 @@ export default function Navbar() {
           )}
           <Link to="/cart" className="relative text-[#333] hover:text-[#8b5e3c] transition-colors">
             <FiShoppingCart className="text-xl" />
-            <span className="absolute -top-2 -right-2 bg-[#8b5e3c] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">0</span>
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-[#8b5e3c] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                {totalItems}
+              </span>
+            )}
           </Link>
         </div>
 
@@ -90,7 +99,11 @@ export default function Navbar() {
         <div className="flex md:hidden items-center gap-3">
           <Link to="/cart" className="relative text-[#333]">
             <FiShoppingCart className="text-xl" />
-            <span className="absolute -top-2 -right-2 bg-[#8b5e3c] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">0</span>
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-[#8b5e3c] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                {totalItems}
+              </span>
+            )}
           </Link>
           <button className="text-[#333]" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <FiX className="text-2xl" /> : <FiMenu className="text-2xl" />}
@@ -115,9 +128,14 @@ export default function Navbar() {
           ))}
           <div className="flex gap-3 pt-2 border-t border-gray-100">
             {user ? (
-              <button onClick={handleLogout} className="btn-outline text-sm py-2 px-4 flex items-center gap-1.5">
-                <FiLogOut /> Logout
-              </button>
+              <>
+                <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="btn-outline text-sm py-2 px-4 flex items-center gap-1.5">
+                  <FiUser /> Dashboard
+                </Link>
+                <button onClick={handleLogout} className="btn-outline text-sm py-2 px-4 flex items-center gap-1.5">
+                  <FiLogOut /> Logout
+                </button>
+              </>
             ) : (
               <>
                 <Link to="/login" onClick={() => setMenuOpen(false)} className="btn-outline text-sm py-2 px-4">Login</Link>

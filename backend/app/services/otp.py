@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 # In-memory OTP store: { email: { otp, expires_at } }
 otp_store: dict = {}
 
-OTP_EXPIRY_MINUTES = 10
+OTP_EXPIRY_MINUTES = 5
 
 def generate_otp() -> str:
     return ''.join(random.choices(string.digits, k=6))
