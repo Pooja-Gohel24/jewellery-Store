@@ -44,7 +44,7 @@ def send_otp_email(to_email: str, otp: str, name: str = "User") -> None:
     msg.attach(MIMEText(html, "html"))
 
     try:
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+        with smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT) as server:
             server.starttls()
             server.login(email_user, email_pass)
             server.send_message(msg)
