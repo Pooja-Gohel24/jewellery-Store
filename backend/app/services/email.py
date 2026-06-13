@@ -1,18 +1,13 @@
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import requests
 from app.config import settings
 
 
 def send_otp_email(to_email: str, otp: str, name: str = "User") -> None:
-    email_user = settings.EMAIL_USERNAME
-    email_pass = settings.EMAIL_PASSWORD
+    api_key = settings.EMAIL_PASSWORD
 
-    if not email_user or not email_pass:
+    if not api_key:
         print(f"[WARN] Email not configured. OTP for {to_email}: {otp}")
         return
-
-    subject = "Your Jewellery Store OTP Code"
 
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; background: #f6f2ee; border-radius: 16px; overflow: hidden;">
@@ -28,27 +23,37 @@ def send_otp_email(to_email: str, otp: str, name: str = "User") -> None:
           <p style="color: #8b5e3c; font-size: 36px; font-weight: 700; letter-spacing: 10px; margin: 0;">{otp}</p>
         </div>
         <p style="color: #999; font-size: 12px;">
-          If you did not request this, please ignore this email. Do not share this OTP with anyone.
+          If you did not request this, please ignore this email.
         </p>
-      </div>
-      <div style="text-align: center; padding: 16px; color: #aaa; font-size: 11px;">
-        &copy; 2025 Jewellery Store. All rights reserved.
       </div>
     </div>
     """
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = email_user
-    msg["To"] = to_email
-    msg.attach(MIMEText(html, "html"))
+    payload = {
+        "sender": {"name": "Jewellery Store", "email": settings.EMAIL_FROM},
+        "to": [{"email": to_email, "name": name}],
+        "subject": "Your Jewellery Store OTP Code",
+        "htmlContent": html
+    }
+
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "api-key": api_key
+    }
 
     try:
-        with smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT) as server:
-            server.starttls()
-            server.login(email_user, email_pass)
-            server.send_message(msg)
-        print(f"[INFO] OTP email sent to {to_email}")
+        response = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            json=payload,
+            headers=headers,
+            timeout=10
+        )
+        if response.status_code == 201:
+            print(f"[INFO] OTP email sent to {to_email}")
+        else:
+            print(f"[ERROR] Brevo API error: {response.status_code} - {response.text}")
+            print(f"[DEBUG] OTP for testing: {otp}")
     except Exception as e:
-        print(f"[ERROR] Failed to send email to {to_email}: {e}")
+        print(f"[ERROR] Failed to send email: {e}")
         print(f"[DEBUG] OTP for testing: {otp}")
