@@ -5,6 +5,7 @@ from app.models import user    # noqa: F401
 from app.models import product # noqa: F401
 from app.routes.auth import router as auth_router
 from app.routes.products import router as products_router
+from app.routes.admin import router as admin_router
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
@@ -32,6 +33,7 @@ app.add_middleware(
 
 app.include_router(auth_router, prefix="/api")
 app.include_router(products_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 
 
 @app.on_event("startup")

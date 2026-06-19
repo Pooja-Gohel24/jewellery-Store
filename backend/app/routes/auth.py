@@ -61,7 +61,7 @@ def verify_otp_route(payload: OTPRequest, db: Session = Depends(get_db)):
     token = create_access_token({"sub": user.email, "id": user.id})
     return TokenResponse(
         access_token=token,
-        user=UserResponse(id=user.id, name=user.name, email=user.email)
+        user=UserResponse(id=user.id, name=user.name, email=user.email, is_admin=user.is_admin, created_at=user.created_at)
     )
 
 

@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+from datetime import datetime
 
 class RegisterRequest(BaseModel):
     name: str
@@ -20,6 +21,11 @@ class UserResponse(BaseModel):
     id: int
     name: str
     email: str
+    is_admin: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 class TokenResponse(BaseModel):
     access_token: str

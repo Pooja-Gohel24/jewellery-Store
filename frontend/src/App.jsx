@@ -4,6 +4,7 @@ import { CartProvider } from './context/CartContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -13,6 +14,9 @@ import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import Dashboard from './pages/Dashboard'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminProducts from './pages/admin/AdminProducts'
+import AdminUsers from './pages/admin/AdminUsers'
 
 function App() {
   return (
@@ -20,23 +24,33 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <div className="flex flex-col min-h-screen font-poppins">
-            <Navbar />
-            <main className="flex-1">
-              <Routes>
-                <Route path="/"            element={<Home />} />
-                <Route path="/login"       element={<Login />} />
-                <Route path="/register"    element={<Register />} />
-                <Route path="/verify-otp"  element={<VerifyOtp />} />
-                <Route path="/shop"        element={<Shop />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
-                <Route path="/cart"        element={<Cart />} />
-                <Route path="/checkout"    element={<Checkout />} />
-                <Route path="/dashboard"   element={
-                  <ProtectedRoute><Dashboard /></ProtectedRoute>
-                } />
-              </Routes>
-            </main>
-            <Footer />
+            <Routes>
+              {/* Admin routes - no Navbar/Footer */}
+              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
+              <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+
+              {/* Public routes - with Navbar/Footer */}
+              <Route path="/*" element={
+                <>
+                  <Navbar />
+                  <main className="flex-1">
+                    <Routes>
+                      <Route path="/"            element={<Home />} />
+                      <Route path="/login"       element={<Login />} />
+                      <Route path="/register"    element={<Register />} />
+                      <Route path="/verify-otp"  element={<VerifyOtp />} />
+                      <Route path="/shop"        element={<Shop />} />
+                      <Route path="/product/:id" element={<ProductDetail />} />
+                      <Route path="/cart"        element={<Cart />} />
+                      <Route path="/checkout"    element={<Checkout />} />
+                      <Route path="/dashboard"   element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    </Routes>
+                  </main>
+                  <Footer />
+                </>
+              } />
+            </Routes>
           </div>
         </CartProvider>
       </AuthProvider>

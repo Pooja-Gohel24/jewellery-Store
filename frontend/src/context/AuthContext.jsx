@@ -24,7 +24,6 @@ export function AuthProvider({ children }) {
     return data // { message: "OTP sent..." }
   }
 
-  // Step 2: Verify OTP — stores token and user
   const verifyOtp = async (email, otp) => {
     const data = await verifyOtpApi({ email, otp })
     setToken(data.access_token)
