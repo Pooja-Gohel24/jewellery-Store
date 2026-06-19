@@ -23,6 +23,26 @@ def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)
     return user
 
 
+@router.get("/setup-admin")
+def setup_admin(db: Session = Depends(get_db)):
+    from app.services.auth import hash_password
+    email = "admin@jewellery.com"
+    existing = db.query(User).filter(User.email == email).first()
+    if existing:
+        existing.is_admin = True
+        db.commit()
+        return {"message": "Admin already exists", "email": email, "password": "Admin@123"}
+    admin = User(
+        name="Admin",
+        email=email,
+        hashed_password=hash_password("Admin@123"),
+        is_admin=True
+    )
+    db.add(admin)
+    db.commit()
+    return {"message": "Admin created", "email": email, "password": "Admin@123"}
+
+
 # Dashboard Stats
 @router.get("/stats")
 def get_stats(db: Session = Depends(get_db), admin=Depends(get_admin_user)):
