@@ -26,10 +26,17 @@ def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)
 @router.get("/setup-admin")
 def setup_admin(db: Session = Depends(get_db)):
     from app.services.auth import hash_password
+    from sqlalchemy import text
+    # Add is_admin column if it doesn't exist
+    try:
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE"))
+        db.commit()
+    except Exception:
+        db.rollback()
     email = "admin@jewellery.com"
     existing = db.query(User).filter(User.email == email).first()
     if existing:
-        existing.is_admin = True
+        db.execute(text(f"UPDATE users SET is_admin = TRUE WHERE email = '{email}'"))
         db.commit()
         return {"message": "Admin already exists", "email": email, "password": "Admin@123"}
     admin = User(
