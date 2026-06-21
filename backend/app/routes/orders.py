@@ -76,3 +76,27 @@ def place_order(payload: OrderCreate, db: Session = Depends(get_db), current_use
 def get_my_orders(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     orders = db.query(Order).filter(Order.user_id == current_user.id).order_by(Order.created_at.desc()).all()
     return orders
+
+
+@router.put("/{order_id}/cancel", response_model=OrderResponse)
+def cancel_order(order_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    order = db.query(Order).filter(Order.id == order_id, Order.user_id == current_user.id).first()
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+    if order.status != "Processing":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Order can only be cancelled if it is in Processing state"
+        )
+    
+    # Restore stock for each item
+    for item in order.items:
+        if item.product_id:
+            db.query(Product).filter(Product.id == item.product_id).update(
+                {"stock": Product.stock + item.quantity}
+            )
+            
+    order.status = "Cancelled"
+    db.commit()
+    db.refresh(order)
+    return order

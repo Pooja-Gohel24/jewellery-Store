@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { FaTruck, FaGem, FaBoxOpen, FaStar, FaChevronLeft, FaChevronRight, FaQuoteLeft, FaShoppingCart } from 'react-icons/fa'
-import { GiRing, GiNecklace, GiChainedHeart, GiEarrings } from 'react-icons/gi'
+import { GiRing, GiNecklace, GiChainedHeart, GiEarrings, GiGemPendant } from 'react-icons/gi'
 import { MdWatch } from 'react-icons/md'
 import { useCart } from '../context/CartContext'
 import { getProducts } from '../api/products'
+import { getCategories } from '../api/categories'
 
 const heroSlides = [
   {
@@ -40,13 +41,13 @@ const features = [
   { icon: FaStar,    title: 'Highest Quality',   desc: 'Top craftsmanship' },
 ]
 
-const categories = [
-  { icon: GiRing,      label: 'Rings' },
-  { icon: GiNecklace,  label: 'Necklaces' },
-  { icon: GiChainedHeart,  label: 'Bracelets' },
-  { icon: GiEarrings,  label: 'Earrings' },
-  { icon: MdWatch,     label: 'Watches' },
-]
+const iconMap = {
+  'Rings': GiRing,
+  'Necklaces': GiNecklace,
+  'Bracelets': GiChainedHeart,
+  'Earrings': GiEarrings,
+  'Watches': MdWatch,
+}
 
 const testimonials = [
   { name: 'Priya S.',    review: 'Absolutely stunning pieces! The quality exceeded my expectations. Will definitely shop again.', rating: 5, avatar: 'https://i.pravatar.cc/60?img=47' },
@@ -60,9 +61,19 @@ export default function Home() {
   const [addedIds, setAddedIds] = useState({})
   const [current, setCurrent] = useState(0)
   const [featuredProducts, setFeaturedProducts] = useState([])
+  const [categories, setCategories] = useState([])
 
   useEffect(() => {
     getProducts().then(data => setFeaturedProducts(data.slice(0, 8))).catch(console.error)
+    
+    getCategories()
+      .then(data => {
+        setCategories(data.map(c => ({
+          label: c.name,
+          icon: iconMap[c.name] || GiGemPendant
+        })))
+      })
+      .catch(console.error)
   }, [])
 
   const handleAddToCart = (e, product) => {

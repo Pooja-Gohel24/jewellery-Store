@@ -2,9 +2,8 @@ import { useState, useMemo, useEffect } from 'react'
 import { FiSearch, FiFilter, FiX } from 'react-icons/fi'
 import { useSearchParams } from 'react-router-dom'
 import { getProducts } from '../api/products'
+import { getCategories } from '../api/categories'
 import ProductCard from '../components/ProductCard'
-
-const categories = ['All', 'Rings', 'Necklaces', 'Earrings', 'Bracelets', 'Watches']
 
 const sortOptions = [
   { value: 'default',    label: 'Default' },
@@ -17,12 +16,21 @@ const sortOptions = [
 export default function Shop() {
   const [searchParams] = useSearchParams()
   const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState(['All'])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState(searchParams.get('category') || 'All')
   const [sortBy, setSortBy] = useState('default')
   const [priceRange, setPriceRange] = useState([0, 100000])
   const [showFilter, setShowFilter] = useState(false)
+
+  useEffect(() => {
+    getCategories()
+      .then(data => {
+        setCategories(['All', ...data.map(c => c.name)])
+      })
+      .catch(console.error)
+  }, [])
 
   useEffect(() => {
     const cat = searchParams.get('category')

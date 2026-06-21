@@ -5,6 +5,8 @@ import { getProduct, getProducts } from '../api/products'
 import ProductCard from '../components/ProductCard'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
+import { useWishlist } from '../context/WishlistContext'
+import { getProductReviews, createProductReview } from '../api/reviews'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -18,9 +20,16 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [addedToCart, setAddedToCart] = useState(false)
 
-  const wishlistKey = user ? `wishlist_${user.id}` : 'wishlist_guest'
+  const { toggleWishlist, isInWishlist } = useWishlist()
+  const wishlisted = product ? isInWishlist(product.id) : false
 
-  const [wishlisted, setWishlisted] = useState(false)
+  // Reviews state
+  const [reviews, setReviews] = useState([])
+  const [reviewsLoading, setReviewsLoading] = useState(true)
+  const [submittingReview, setSubmittingReview] = useState(false)
+  const [newRating, setNewRating] = useState(5)
+  const [newComment, setNewComment] = useState('')
+  const [reviewError, setReviewError] = useState('')
 
   useEffect(() => {
     setLoading(true)
@@ -28,26 +37,50 @@ export default function ProductDetail() {
     getProduct(id)
       .then(data => {
         setProduct(data)
-        // Check wishlist for this product
-        const list = JSON.parse(localStorage.getItem(wishlistKey) || '[]')
-        setWishlisted(list.some(p => p.id === data.id))
         return getProducts({ category: data.category })
       })
       .then(all => setRelated(all.filter(p => p.id !== Number(id)).slice(0, 4)))
       .catch(() => setProduct(null))
       .finally(() => setLoading(false))
+
+    setReviewsLoading(true)
+    getProductReviews(id)
+      .then(setReviews)
+      .catch(console.error)
+      .finally(() => setReviewsLoading(false))
   }, [id])
 
-  const toggleWishlist = () => {
-    const list = JSON.parse(localStorage.getItem(wishlistKey) || '[]')
-    let updated
-    if (wishlisted) {
-      updated = list.filter(p => p.id !== product.id)
-    } else {
-      updated = [...list, product]
+  const handleToggleWishlist = () => {
+    toggleWishlist(product)
+  }
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault()
+    if (!user) {
+      navigate('/login')
+      return
     }
-    localStorage.setItem(wishlistKey, JSON.stringify(updated))
-    setWishlisted(!wishlisted)
+    if (!newComment.trim()) {
+      setReviewError('Review comment is required')
+      return
+    }
+    setSubmittingReview(true)
+    setReviewError('')
+    try {
+      await createProductReview(id, { rating: newRating, comment: newComment })
+      const updatedReviews = await getProductReviews(id)
+      setReviews(updatedReviews)
+      
+      const updatedProduct = await getProduct(id)
+      setProduct(updatedProduct)
+
+      setNewComment('')
+      setNewRating(5)
+    } catch (err) {
+      setReviewError(err.response?.data?.detail || 'Failed to submit review.')
+    } finally {
+      setSubmittingReview(false)
+    }
   }
 
   const handleAddToCart = () => {
@@ -152,7 +185,7 @@ export default function ProductDetail() {
                 {addedToCart ? 'Added to Cart!' : 'Add to Cart'}
               </button>
               <button
-                onClick={toggleWishlist}
+                onClick={handleToggleWishlist}
                 title={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                 className={`w-12 h-12 rounded-full border flex items-center justify-center transition-colors ${
                   wishlisted ? 'bg-red-50 border-red-300 text-red-400' : 'border-gray-200 text-gray-400 hover:border-red-300 hover:text-red-400'
@@ -177,6 +210,109 @@ export default function ProductDetail() {
                   <span className="text-xs text-gray-500">{label}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="bg-white rounded-2xl p-6 sm:p-10 mt-8 space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-5 gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-[#333]">Customer Reviews</h2>
+              <p className="text-gray-400 text-sm mt-0.5">Share your experience with this jewelry</p>
+            </div>
+            <div className="flex items-center gap-3 bg-[#f6f2ee] px-4 py-2.5 rounded-2xl">
+              <span className="text-2xl font-bold text-[#8b5e3c]">{product.rating}</span>
+              <div>
+                <div className="flex text-[#8b5e3c]">
+                  {Array(5).fill(0).map((_, i) => (
+                    <FaStar key={i} className={`text-xs ${i < Math.floor(product.rating) ? 'text-[#8b5e3c]' : 'text-gray-300'}`} />
+                  ))}
+                </div>
+                <span className="text-xs text-gray-500 font-medium">{product.reviews} reviews</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left - Review form */}
+            <div className="lg:col-span-1 space-y-4">
+              <div className="bg-[#f6f2ee] rounded-2xl p-5 space-y-4">
+                <h3 className="font-semibold text-[#333] text-sm">Write a Review</h3>
+                <form onSubmit={handleSubmitReview} className="space-y-4">
+                  {reviewError && (
+                    <div className="bg-red-50 text-red-600 text-xs px-3 py-2 rounded-lg">
+                      {reviewError}
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 block mb-1">Rating</label>
+                    <div className="flex gap-1.5">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setNewRating(star)}
+                          className="text-lg focus:outline-none transition-colors"
+                        >
+                          <FaStar className={star <= newRating ? 'text-[#8b5e3c]' : 'text-gray-300'} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 block mb-1">Comment</label>
+                    <textarea
+                      value={newComment}
+                      onChange={e => setNewComment(e.target.value)}
+                      placeholder="Write your review here..."
+                      rows={4}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#8b5e3c]"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submittingReview}
+                    className="w-full bg-[#8b5e3c] text-white py-2.5 rounded-xl text-xs font-medium hover:bg-[#7a5235] disabled:opacity-60 transition-colors"
+                  >
+                    {submittingReview ? 'Submitting...' : 'Submit Review'}
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* Right - Reviews list */}
+            <div className="lg:col-span-2 space-y-4 max-h-[500px] overflow-y-auto pr-2">
+              {reviewsLoading ? (
+                <div className="flex justify-center py-10">
+                  <div className="w-8 h-8 border-3 border-[#8b5e3c] border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="text-center py-12 text-gray-400 space-y-2">
+                  <p className="text-3xl">📝</p>
+                  <p className="text-sm">No reviews yet. Be the first to write a review!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {reviews.map(r => (
+                    <div key={r.id} className="border-b border-gray-100 pb-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-[#333] text-sm">{r.user_name}</span>
+                        <span className="text-[10px] text-gray-400">
+                          {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                      <div className="flex text-[#8b5e3c]">
+                        {Array(5).fill(0).map((_, i) => (
+                          <FaStar key={i} className={`text-[10px] ${i < r.rating ? 'text-[#8b5e3c]' : 'text-gray-300'}`} />
+                        ))}
+                      </div>
+                      <p className="text-gray-500 text-xs sm:text-sm leading-relaxed">{r.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

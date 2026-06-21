@@ -1,14 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from app.models.user import User
 from app.models.product import Product
 from app.models.order import Order
+from app.models.category import Category
 from app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
 from app.schemas.user import UserResponse
 from app.schemas.order import OrderResponse, OrderStatusUpdate
+from app.schemas.category import CategoryResponse, CategoryCreate, CategoryUpdate
 from app.services.auth import decode_access_token
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -50,13 +53,18 @@ def setup_admin(secret: str, db: Session = Depends(get_db)):
 def get_stats(db: Session = Depends(get_db), admin=Depends(get_admin_user)):
     total_users = db.query(User).filter(User.is_admin == False).count()
     total_products = db.query(Product).count()
-    categories = db.query(Product.category).distinct().count()
+    categories = db.query(Category).count()
     total_orders = db.query(Order).count()
+    
+    # Calculate revenue excluding Cancelled orders
+    revenue = db.query(func.sum(Order.total_amount)).filter(Order.status != "Cancelled").scalar() or 0.0
+    
     return {
         "total_users": total_users,
         "total_products": total_products,
         "total_categories": categories,
         "total_orders": total_orders,
+        "total_revenue": round(float(revenue), 2),
     }
 
 
@@ -133,3 +141,57 @@ def update_order_status(order_id: int, payload: OrderStatusUpdate, db: Session =
     db.commit()
     db.refresh(order)
     return order
+
+
+# Categories management
+@router.post("/categories", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
+def create_category(payload: CategoryCreate, db: Session = Depends(get_db), admin=Depends(get_admin_user)):
+    # Check if category already exists
+    existing = db.query(Category).filter(Category.name.ilike(payload.name)).first()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Category already exists")
+    category = Category(name=payload.name)
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return category
+
+
+@router.put("/categories/{category_id}", response_model=CategoryResponse)
+def update_category(category_id: int, payload: CategoryUpdate, db: Session = Depends(get_db), admin=Depends(get_admin_user)):
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+    
+    # Check if new name conflict
+    conflict = db.query(Category).filter(Category.name.ilike(payload.name), Category.id != category_id).first()
+    if conflict:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Another category has this name")
+    
+    old_name = category.name
+    category.name = payload.name
+    
+    # Update products that use this category name
+    db.query(Product).filter(Product.category == old_name).update({"category": payload.name})
+    db.commit()
+    db.refresh(category)
+    return category
+
+
+@router.delete("/categories/{category_id}")
+def delete_category(category_id: int, db: Session = Depends(get_db), admin=Depends(get_admin_user)):
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+        
+    # Prevent delete if products are using this category
+    product_count = db.query(Product).filter(Product.category == category.name).count()
+    if product_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail=f"Cannot delete category: {product_count} products are currently assigned to '{category.name}'"
+        )
+        
+    db.delete(category)
+    db.commit()
+    return {"message": "Category deleted"}

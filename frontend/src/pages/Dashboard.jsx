@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useWishlist } from '../context/WishlistContext'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { FiUser, FiShoppingBag, FiHeart, FiSettings, FiLogOut, FiEdit2, FiX, FiEye, FiEyeOff } from 'react-icons/fi'
 import { FaCheckCircle, FaClock, FaTruck, FaBan } from 'react-icons/fa'
 import { GiGemPendant } from 'react-icons/gi'
-import { getMyOrders } from '../api/orders'
+import { getMyOrders, cancelOrder } from '../api/orders'
 import { updateProfile } from '../api/auth'
 
 const statusConfig = {
@@ -38,18 +39,7 @@ export default function Dashboard() {
   const [editLoading, setEditLoading] = useState(false)
   const [showNewPw, setShowNewPw] = useState(false)
 
-  // Wishlist — persisted per user in localStorage
-  const wishlistKey = user ? `wishlist_${user.id}` : 'wishlist_guest'
-  const [wishlist, setWishlist] = useState(() => {
-    try {
-      const key = user ? `wishlist_${user.id}` : 'wishlist_guest'
-      return JSON.parse(localStorage.getItem(key) || '[]')
-    } catch { return [] }
-  })
-
-  useEffect(() => {
-    localStorage.setItem(wishlistKey, JSON.stringify(wishlist))
-  }, [wishlist, wishlistKey])
+  const { wishlist, removeFromWishlist } = useWishlist()
 
   useEffect(() => {
     if (activeTab === 'orders') {
@@ -67,6 +57,17 @@ export default function Dashboard() {
   }, [])
 
   const handleLogout = () => { logout(); navigate('/') }
+
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) return
+    try {
+      await cancelOrder(orderId)
+      const updated = await getMyOrders()
+      setOrders(updated)
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Failed to cancel order.')
+    }
+  }
 
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
@@ -120,7 +121,7 @@ export default function Dashboard() {
     }
   }
 
-  const removeFromWishlist = (id) => setWishlist(prev => prev.filter(p => p.id !== id))
+  // Removed local removeFromWishlist in favor of context
 
   return (
     <div className="min-h-screen bg-[#f6f2ee] font-poppins pt-20">
@@ -230,8 +231,18 @@ export default function Dashboard() {
                               </p>
                               <p className="text-sm font-bold text-[#8b5e3c]">₹{order.total_amount.toLocaleString('en-IN')}</p>
                             </div>
-                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-medium ${s.bg} ${s.border} ${s.color} w-fit`}>
-                              <s.icon /> {order.status}
+                            <div className="flex items-center gap-2">
+                              <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-medium ${s.bg} ${s.border} ${s.color} w-fit`}>
+                                <s.icon /> {order.status}
+                              </div>
+                              {order.status === 'Processing' && (
+                                <button
+                                  onClick={() => handleCancelOrder(order.id)}
+                                  className="text-xs font-medium border border-red-200 text-red-500 bg-red-50 hover:bg-red-100 hover:border-red-300 px-3 py-1.5 rounded-full transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              )}
                             </div>
                           </div>
                           {order.items?.length > 0 && (

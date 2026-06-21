@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { FiGrid, FiPackage, FiUsers, FiLogOut, FiShoppingBag, FiMenu, FiX } from 'react-icons/fi'
+import { FiGrid, FiPackage, FiUsers, FiLogOut, FiShoppingBag, FiMenu, FiX, FiList } from 'react-icons/fi'
 import { GiGemPendant } from 'react-icons/gi'
 
 const links = [
-  { to: '/admin',          label: 'Dashboard', icon: FiGrid,        end: true },
-  { to: '/admin/products', label: 'Products',  icon: FiPackage },
-  { to: '/admin/orders',   label: 'Orders',    icon: FiShoppingBag },
-  { to: '/admin/users',    label: 'Users',     icon: FiUsers },
+  { to: '/admin',            label: 'Dashboard',  icon: FiGrid,        end: true },
+  { to: '/admin/products',   label: 'Products',   icon: FiPackage },
+  { to: '/admin/categories', label: 'Categories', icon: FiList },
+  { to: '/admin/orders',     label: 'Orders',     icon: FiShoppingBag },
+  { to: '/admin/users',      label: 'Users',      icon: FiUsers },
 ]
 
 export default function AdminLayout({ children }) {

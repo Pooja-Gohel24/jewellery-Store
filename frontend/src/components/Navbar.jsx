@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
-import { FiMenu, FiX, FiShoppingCart, FiUser, FiLogOut } from 'react-icons/fi'
+import { useWishlist } from '../context/WishlistContext'
+import { FiMenu, FiX, FiShoppingCart, FiUser, FiLogOut, FiHeart } from 'react-icons/fi'
 import { GiGemPendant } from 'react-icons/gi'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { totalItems } = useCart()
+  const { wishlist } = useWishlist()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -84,6 +86,14 @@ export default function Navbar() {
               </Link>
             </>
           )}
+          <Link to="/wishlist" className="relative text-[#333] hover:text-[#8b5e3c] transition-colors">
+            <FiHeart className="text-xl" />
+            {wishlist.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-[#8b5e3c] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center animate-pulse">
+                {wishlist.length}
+              </span>
+            )}
+          </Link>
           <Link to="/cart" className="relative text-[#333] hover:text-[#8b5e3c] transition-colors">
             <FiShoppingCart className="text-xl" />
             {totalItems > 0 && (
@@ -96,6 +106,14 @@ export default function Navbar() {
 
         {/* Mobile Right */}
         <div className="flex md:hidden items-center gap-3">
+          <Link to="/wishlist" className="relative text-[#333] hover:text-[#8b5e3c] transition-colors">
+            <FiHeart className="text-xl" />
+            {wishlist.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-[#8b5e3c] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                {wishlist.length}
+              </span>
+            )}
+          </Link>
           <Link to="/cart" className="relative text-[#333]">
             <FiShoppingCart className="text-xl" />
             {totalItems > 0 && (

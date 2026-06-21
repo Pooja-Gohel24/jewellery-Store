@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { FaStar, FaShoppingCart, FaHeart } from 'react-icons/fa'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
+import { useWishlist } from '../context/WishlistContext'
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart()
@@ -11,27 +12,12 @@ export default function ProductCard({ product }) {
   const originalPrice = product.original_price ?? product.originalPrice
   const discount = Math.round(((originalPrice - product.price) / originalPrice) * 100)
 
-  const wishlistKey = user ? `wishlist_${user.id}` : 'wishlist_guest'
+  const { toggleWishlist, isInWishlist } = useWishlist()
+  const wishlisted = isInWishlist(product.id)
 
-  const [wishlisted, setWishlisted] = useState(() => {
-    try {
-      const key = user ? `wishlist_${user.id}` : 'wishlist_guest'
-      const list = JSON.parse(localStorage.getItem(key) || '[]')
-      return list.some(p => p.id === product.id)
-    } catch { return false }
-  })
-
-  const toggleWishlist = (e) => {
+  const handleToggleWishlist = (e) => {
     e.preventDefault()
-    const list = JSON.parse(localStorage.getItem(wishlistKey) || '[]')
-    let updated
-    if (wishlisted) {
-      updated = list.filter(p => p.id !== product.id)
-    } else {
-      updated = [...list, product]
-    }
-    localStorage.setItem(wishlistKey, JSON.stringify(updated))
-    setWishlisted(!wishlisted)
+    toggleWishlist(product)
   }
 
   const handleAddToCart = (e) => {
@@ -51,7 +37,7 @@ export default function ProductCard({ product }) {
         className={`absolute top-3 right-3 z-10 w-8 h-8 bg-white rounded-full shadow flex items-center justify-center transition-colors ${
           wishlisted ? 'text-red-400' : 'text-gray-300 hover:text-red-400'
         }`}
-        onClick={toggleWishlist}
+        onClick={handleToggleWishlist}
         title={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
       >
         <FaHeart className="text-sm" />

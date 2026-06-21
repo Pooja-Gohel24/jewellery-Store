@@ -1,19 +1,24 @@
 import { useEffect, useState } from 'react'
 import AdminLayout from '../../components/AdminLayout'
 import { getAdminProducts, createProduct, updateProduct, deleteProduct } from '../../api/admin'
+import { getCategories } from '../../api/categories'
 import { FiPlus, FiEdit2, FiTrash2, FiX } from 'react-icons/fi'
 
 const empty = { name: '', category: '', price: '', original_price: '', img: '', badge: '', description: '', rating: 0, reviews: 0, stock: 100 }
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(empty)
   const [loading, setLoading] = useState(false)
   const [formError, setFormError] = useState('')
 
-  const load = () => getAdminProducts().then(setProducts).catch(console.error)
+  const load = () => {
+    getAdminProducts().then(setProducts).catch(console.error)
+    getCategories().then(setCategories).catch(console.error)
+  }
 
   useEffect(() => { load() }, [])
 
@@ -106,7 +111,7 @@ export default function AdminProducts() {
               )}
               {[
                 { name: 'name', label: 'Name' },
-                { name: 'category', label: 'Category' },
+                { name: 'category', label: 'Category', type: 'select' },
                 { name: 'price', label: 'Price', type: 'number' },
                 { name: 'original_price', label: 'Original Price', type: 'number' },
                 { name: 'stock', label: 'Stock', type: 'number' },
@@ -115,13 +120,27 @@ export default function AdminProducts() {
               ].map(f => (
                 <div key={f.name}>
                   <label className="text-xs font-medium text-gray-500">{f.label}</label>
-                  <input
-                    type={f.type || 'text'}
-                    value={form[f.name]}
-                    onChange={e => setForm({ ...form, [f.name]: e.target.value })}
-                    required={f.name !== 'badge'}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm mt-1 outline-none focus:border-[#8b5e3c]"
-                  />
+                  {f.type === 'select' ? (
+                    <select
+                      value={form[f.name]}
+                      onChange={e => setForm({ ...form, [f.name]: e.target.value })}
+                      required
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm mt-1 bg-white outline-none focus:border-[#8b5e3c]"
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map(c => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={f.type || 'text'}
+                      value={form[f.name]}
+                      onChange={e => setForm({ ...form, [f.name]: e.target.value })}
+                      required={f.name !== 'badge'}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm mt-1 outline-none focus:border-[#8b5e3c]"
+                    />
+                  )}
                 </div>
               ))}
               <div>

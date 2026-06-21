@@ -6,6 +6,8 @@ from app.routes.auth import router as auth_router
 from app.routes.products import router as products_router
 from app.routes.admin import router as admin_router
 from app.routes.orders import router as orders_router
+from app.routes.wishlist import router as wishlist_router
+from app.routes.categories import router as categories_router
 from app.config import settings
 import threading
 import time
@@ -35,6 +37,8 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(products_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 app.include_router(orders_router, prefix="/api")
+app.include_router(wishlist_router, prefix="/api")
+app.include_router(categories_router, prefix="/api")
 
 
 @app.on_event("startup")
