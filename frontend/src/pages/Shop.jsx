@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { getProducts } from '../api/products'
 import ProductCard from '../components/ProductCard'
 
-const categories = ['All', 'Rings', 'Necklaces', 'Earrings', 'Bracelets']
+const categories = ['All', 'Rings', 'Necklaces', 'Earrings', 'Bracelets', 'Watches']
 
 const sortOptions = [
   { value: 'default',    label: 'Default' },

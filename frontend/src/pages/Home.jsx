@@ -111,9 +111,6 @@ export default function Home() {
                 <p className="text-gray-300 text-sm sm:text-base leading-relaxed">{slide.desc}</p>
                 <div className="flex flex-wrap gap-3 pt-2">
                   <Link to="/shop" className="btn-primary text-sm px-6 py-3">Shop Now</Link>
-                  <Link to="/about" className="border border-white text-white hover:bg-white hover:text-[#8b5e3c] text-sm px-6 py-3 rounded-full transition-all duration-200">
-                    Our Story
-                  </Link>
                 </div>
               </div>
             </div>
@@ -172,7 +169,7 @@ export default function Home() {
             <p className="text-gray-500 text-sm leading-relaxed">
               Every gemstone is hand-selected, every setting meticulously crafted — because you deserve nothing less than perfection.
             </p>
-            <Link to="/about" className="btn-primary text-sm inline-block">Learn More</Link>
+            <Link to="/shop" className="btn-primary text-sm inline-block">Shop Now</Link>
           </div>
         </div>
       </section>

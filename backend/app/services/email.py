@@ -1,12 +1,17 @@
 import requests
 from app.config import settings
 
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
+
 
 def send_otp_email(to_email: str, otp: str, name: str = "User") -> None:
+    """Send OTP email via Brevo transactional API.
+    EMAIL_PASSWORD env var must hold your Brevo API key (not a Gmail password).
+    """
     api_key = settings.EMAIL_PASSWORD
 
     if not api_key:
-        print(f"[WARN] Email not configured. OTP for {to_email}: {otp}")
+        print(f"[WARN] EMAIL_PASSWORD (Brevo API key) not set. OTP for {to_email}: {otp}")
         return
 
     html = f"""
@@ -33,27 +38,26 @@ def send_otp_email(to_email: str, otp: str, name: str = "User") -> None:
         "sender": {"name": "Jewellery Store", "email": settings.EMAIL_FROM},
         "to": [{"email": to_email, "name": name}],
         "subject": "Your Jewellery Store OTP Code",
-        "htmlContent": html
+        "htmlContent": html,
     }
 
     headers = {
         "accept": "application/json",
         "content-type": "application/json",
-        "api-key": api_key
+        "api-key": api_key,
     }
 
     try:
-        response = requests.post(
-            "https://api.brevo.com/v3/smtp/email",
-            json=payload,
-            headers=headers,
-            timeout=10
-        )
+        response = requests.post(BREVO_API_URL, json=payload, headers=headers, timeout=10)
+        print(f"[DEBUG] Brevo status: {response.status_code}, body: {response.text}")
         if response.status_code == 201:
             print(f"[INFO] OTP email sent to {to_email}")
         else:
-            print(f"[ERROR] Brevo API error: {response.status_code} - {response.text}")
-            print(f"[DEBUG] OTP for testing: {otp}")
+            print(f"[ERROR] Brevo error {response.status_code}: {response.text}")
+            print(f"[DEV] OTP for {to_email}: {otp}")
+    except requests.Timeout:
+        print(f"[ERROR] Brevo request timed out for {to_email}")
+        print(f"[DEV] OTP for {to_email}: {otp}")
     except Exception as e:
         print(f"[ERROR] Failed to send email: {e}")
-        print(f"[DEBUG] OTP for testing: {otp}")
+        print(f"[DEV] OTP for {to_email}: {otp}")

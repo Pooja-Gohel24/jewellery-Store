@@ -25,10 +25,8 @@ export default function Navbar() {
   }
 
   const links = [
-    { to: '/', label: 'Home' },
+    { to: '/', label: 'Home', end: true },
     { to: '/shop', label: 'Collections' },
-    { to: '/about', label: 'About' },
-    { to: '/contact', label: 'Contact' },
   ]
 
   return (
@@ -49,6 +47,7 @@ export default function Navbar() {
             <NavLink
               key={link.to}
               to={link.to}
+              end={link.end}
               className={({ isActive }) =>
                 `text-sm font-poppins transition-colors duration-200 ${isActive ? 'text-[#8b5e3c] font-medium' : 'text-[#333] hover:text-[#8b5e3c]'}`
               }
@@ -118,6 +117,7 @@ export default function Navbar() {
             <NavLink
               key={link.to}
               to={link.to}
+              end={link.end}
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
                 `block text-sm py-1 ${isActive ? 'text-[#8b5e3c] font-medium' : 'text-[#333]'}`

@@ -4,18 +4,23 @@ import { FaStar, FaShoppingCart, FaHeart, FaShieldAlt, FaTruck, FaUndo } from 'r
 import { getProduct, getProducts } from '../api/products'
 import ProductCard from '../components/ProductCard'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToCart } = useCart()
+  const { user } = useAuth()
 
   const [product, setProduct] = useState(null)
   const [related, setRelated] = useState([])
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
-  const [wishlisted, setWishlisted] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
+
+  const wishlistKey = user ? `wishlist_${user.id}` : 'wishlist_guest'
+
+  const [wishlisted, setWishlisted] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -23,12 +28,27 @@ export default function ProductDetail() {
     getProduct(id)
       .then(data => {
         setProduct(data)
+        // Check wishlist for this product
+        const list = JSON.parse(localStorage.getItem(wishlistKey) || '[]')
+        setWishlisted(list.some(p => p.id === data.id))
         return getProducts({ category: data.category })
       })
       .then(all => setRelated(all.filter(p => p.id !== Number(id)).slice(0, 4)))
       .catch(() => setProduct(null))
       .finally(() => setLoading(false))
   }, [id])
+
+  const toggleWishlist = () => {
+    const list = JSON.parse(localStorage.getItem(wishlistKey) || '[]')
+    let updated
+    if (wishlisted) {
+      updated = list.filter(p => p.id !== product.id)
+    } else {
+      updated = [...list, product]
+    }
+    localStorage.setItem(wishlistKey, JSON.stringify(updated))
+    setWishlisted(!wishlisted)
+  }
 
   const handleAddToCart = () => {
     const added = addToCart(product, quantity)
@@ -132,7 +152,8 @@ export default function ProductDetail() {
                 {addedToCart ? 'Added to Cart!' : 'Add to Cart'}
               </button>
               <button
-                onClick={() => setWishlisted(!wishlisted)}
+                onClick={toggleWishlist}
+                title={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                 className={`w-12 h-12 rounded-full border flex items-center justify-center transition-colors ${
                   wishlisted ? 'bg-red-50 border-red-300 text-red-400' : 'border-gray-200 text-gray-400 hover:border-red-300 hover:text-red-400'
                 }`}
@@ -141,7 +162,7 @@ export default function ProductDetail() {
               </button>
             </div>
 
-            <button onClick={() => navigate('/checkout')} className="w-full btn-outline py-3 text-sm font-medium">
+            <button onClick={() => { const ok = addToCart(product, quantity); if (ok) navigate('/checkout') }} className="w-full btn-outline py-3 text-sm font-medium">
               Buy Now
             </button>
 

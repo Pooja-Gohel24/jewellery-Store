@@ -81,8 +81,8 @@ export default function VerifyOtp() {
     setLoading(true)
     setError('')
     try {
-      await verifyOtp(email, otpValue)
-      navigate('/')
+      const data = await verifyOtp(email, otpValue)
+      navigate(data.user.is_admin ? '/admin' : '/')
     } catch (err) {
       setError(err.response?.data?.detail || 'Invalid or expired OTP. Please try again.')
       setOtp(['', '', '', '', '', ''])

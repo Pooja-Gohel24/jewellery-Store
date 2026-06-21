@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiUserPlus, FiPhone } from 'react-icons/fi'
+import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiUserPlus } from 'react-icons/fi'
 import { GiGemPendant } from 'react-icons/gi'
 
 export default function Register() {
   const { register } = useAuth()
   const navigate = useNavigate()
 
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [errors, setErrors] = useState({})
   const [apiError, setApiError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,26 +19,18 @@ export default function Register() {
     const e = {}
     const name = form.name.trim()
     const email = form.email.trim()
-    const phone = form.phone.trim()
     const { password, confirmPassword } = form
 
-    // Name
     if (!name) e.name = 'Full name is required'
     else if (name.length < 2) e.name = 'Name must be at least 2 characters'
     else if (name.length > 50) e.name = 'Name must be under 50 characters'
     else if (!/^[a-zA-Z\s]+$/.test(name)) e.name = 'Name must contain letters only'
 
-    // Email
     if (!email) e.email = 'Email is required'
     else if (/\s/.test(email)) e.email = 'Email must not contain spaces'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Enter a valid email address'
     else if (email.length > 100) e.email = 'Email must be under 100 characters'
 
-    // Phone
-    if (!phone) e.phone = 'Phone number is required'
-    else if (!/^[6-9]\d{9}$/.test(phone)) e.phone = 'Enter a valid 10-digit Indian mobile number'
-
-    // Password
     if (!password) e.password = 'Password is required'
     else if (password.length < 6) e.password = 'Minimum 6 characters'
     else if (password.length > 72) e.password = 'Password must be under 72 characters'
@@ -47,7 +39,6 @@ export default function Register() {
     else if (!/[0-9]/.test(password)) e.password = 'Must contain at least one number'
     else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) e.password = 'Must contain at least one special character'
 
-    // Confirm Password
     if (!confirmPassword) e.confirmPassword = 'Please confirm your password'
     else if (password !== confirmPassword) e.confirmPassword = 'Passwords do not match'
 
@@ -87,7 +78,7 @@ export default function Register() {
     if (/[A-Z]/.test(p)) score++
     if (/[0-9]/.test(p)) score++
     if (/[!@#$%^&*(),.?":{}|<>]/.test(p)) score++
-    if (score <= 1) return { label: 'Weak',   color: 'bg-red-400',   w: 'w-1/4' }
+    if (score <= 1) return { label: 'Weak',   color: 'bg-red-400',    w: 'w-1/4' }
     if (score === 2) return { label: 'Fair',   color: 'bg-yellow-400', w: 'w-2/4' }
     if (score === 3) return { label: 'Good',   color: 'bg-blue-400',   w: 'w-3/4' }
     return              { label: 'Strong', color: 'bg-green-500',  w: 'w-full' }
@@ -178,23 +169,6 @@ export default function Register() {
                   />
                 </div>
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#333] mb-1.5">Phone Number</label>
-                <div className="relative">
-                  <FiPhone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                    placeholder="9876543210"
-                    maxLength={10}
-                    className={`input-field pl-10 ${errors.phone ? 'border-red-400 focus:ring-red-300' : ''}`}
-                  />
-                </div>
-                {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
               </div>
 
               <div>

@@ -12,6 +12,7 @@ class Product(Base):
     original_price = Column(Float, nullable=False)
     rating = Column(Float, default=0.0)
     reviews = Column(Integer, default=0)
+    stock = Column(Integer, default=100)
     img = Column(String, nullable=False)
     badge = Column(String, default="")
     description = Column(String, nullable=False)

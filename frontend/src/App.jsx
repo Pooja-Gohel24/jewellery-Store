@@ -9,6 +9,7 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import VerifyOtp from './pages/VerifyOtp'
+import ForgotPassword from './pages/ForgotPassword'
 import Shop from './pages/Shop'
 import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
@@ -17,6 +18,7 @@ import Dashboard from './pages/Dashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProducts from './pages/admin/AdminProducts'
 import AdminUsers from './pages/admin/AdminUsers'
+import AdminOrders from './pages/admin/AdminOrders'
 
 function App() {
   return (
@@ -28,6 +30,7 @@ function App() {
               {/* Admin routes - no Navbar/Footer */}
               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
               <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
+              <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
               <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
 
               {/* Public routes - with Navbar/Footer */}
@@ -39,11 +42,12 @@ function App() {
                       <Route path="/"            element={<Home />} />
                       <Route path="/login"       element={<Login />} />
                       <Route path="/register"    element={<Register />} />
-                      <Route path="/verify-otp"  element={<VerifyOtp />} />
+                      <Route path="/verify-otp"      element={<VerifyOtp />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
                       <Route path="/shop"        element={<Shop />} />
                       <Route path="/product/:id" element={<ProductDetail />} />
                       <Route path="/cart"        element={<Cart />} />
-                      <Route path="/checkout"    element={<Checkout />} />
+                      <Route path="/checkout"    element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
                       <Route path="/dashboard"   element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                     </Routes>
                   </main>

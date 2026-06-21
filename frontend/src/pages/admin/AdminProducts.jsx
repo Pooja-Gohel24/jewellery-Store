@@ -3,7 +3,7 @@ import AdminLayout from '../../components/AdminLayout'
 import { getAdminProducts, createProduct, updateProduct, deleteProduct } from '../../api/admin'
 import { FiPlus, FiEdit2, FiTrash2, FiX } from 'react-icons/fi'
 
-const empty = { name: '', category: '', price: '', original_price: '', img: '', badge: '', description: '', rating: 0, reviews: 0 }
+const empty = { name: '', category: '', price: '', original_price: '', img: '', badge: '', description: '', rating: 0, reviews: 0, stock: 100 }
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([])
@@ -11,24 +11,26 @@ export default function AdminProducts() {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(empty)
   const [loading, setLoading] = useState(false)
+  const [formError, setFormError] = useState('')
 
   const load = () => getAdminProducts().then(setProducts).catch(console.error)
 
   useEffect(() => { load() }, [])
 
-  const openAdd = () => { setEditing(null); setForm(empty); setShowModal(true) }
-  const openEdit = (p) => { setEditing(p); setForm({ ...p }); setShowModal(true) }
+  const openAdd = () => { setEditing(null); setForm(empty); setFormError(''); setShowModal(true) }
+  const openEdit = (p) => { setEditing(p); setForm({ ...p }); setFormError(''); setShowModal(true) }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
+    setFormError('')
     try {
       const data = { ...form, price: +form.price, original_price: +form.original_price, rating: +form.rating, reviews: +form.reviews }
       editing ? await updateProduct(editing.id, data) : await createProduct(data)
       setShowModal(false)
       load()
     } catch (err) {
-      console.error(err)
+      setFormError(err.response?.data?.detail || 'Failed to save product. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -57,6 +59,7 @@ export default function AdminProducts() {
                 <th className="px-5 py-3 text-left">Product</th>
                 <th className="px-5 py-3 text-left">Category</th>
                 <th className="px-5 py-3 text-left">Price</th>
+                <th className="px-5 py-3 text-left">Stock</th>
                 <th className="px-5 py-3 text-left">Rating</th>
                 <th className="px-5 py-3 text-left">Actions</th>
               </tr>
@@ -70,6 +73,9 @@ export default function AdminProducts() {
                   </td>
                   <td className="px-5 py-3 text-gray-500">{p.category}</td>
                   <td className="px-5 py-3 font-medium text-[#8b5e3c]">₹{p.price.toLocaleString('en-IN')}</td>
+                  <td className="px-5 py-3 text-gray-500">
+                    <span className={p.stock <= 10 ? 'text-red-500 font-medium' : ''}>{p.stock}</span>
+                  </td>
                   <td className="px-5 py-3 text-gray-500">⭐ {p.rating}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
@@ -93,11 +99,17 @@ export default function AdminProducts() {
               <button onClick={() => setShowModal(false)}><FiX className="text-gray-400 text-xl" /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-3">
+              {formError && (
+                <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-3 py-2 rounded-lg">
+                  ⚠️ {formError}
+                </div>
+              )}
               {[
                 { name: 'name', label: 'Name' },
                 { name: 'category', label: 'Category' },
                 { name: 'price', label: 'Price', type: 'number' },
                 { name: 'original_price', label: 'Original Price', type: 'number' },
+                { name: 'stock', label: 'Stock', type: 'number' },
                 { name: 'img', label: 'Image URL' },
                 { name: 'badge', label: 'Badge (optional)' },
               ].map(f => (

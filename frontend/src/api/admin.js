@@ -9,3 +9,6 @@ export const deleteProduct = (id) => api.delete(`/admin/products/${id}`).then(r 
 
 export const getAdminUsers = () => api.get('/admin/users').then(r => r.data)
 export const deleteUser = (id) => api.delete(`/admin/users/${id}`).then(r => r.data)
+
+export const getAdminOrders = () => api.get('/admin/orders').then(r => r.data)
+export const updateOrderStatus = (id, status) => api.put(`/admin/orders/${id}/status`, { status }).then(r => r.data)

@@ -3,15 +3,21 @@ import { Link, useNavigate } from 'react-router-dom'
 import { FiUser, FiMail, FiPhone, FiMapPin } from 'react-icons/fi'
 import { FaShieldAlt, FaCheckCircle } from 'react-icons/fa'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
+import { placeOrder } from '../api/orders'
 
 export default function Checkout() {
   const { cartItems, totalPrice, totalItems, clearCart } = useCart()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [orderPlaced, setOrderPlaced] = useState(false)
+  const [orderId, setOrderId] = useState(null)
+  const [orderTotal, setOrderTotal] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [apiError, setApiError] = useState('')
 
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', address: '', city: '', state: '', pincode: '', paymentMethod: 'cod'
+    name: user?.name || '', email: user?.email || '', phone: '', address: '', city: '', state: '', pincode: '', paymentMethod: 'cod'
   })
   const [errors, setErrors] = useState({})
 
@@ -37,18 +43,46 @@ export default function Checkout() {
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
     setErrors({ ...errors, [e.target.name]: '' })
+    setApiError('')
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      setOrderPlaced(true)
+    setApiError('')
+    try {
+      const orderData = {
+        items: cartItems.map(item => ({
+          product_id: item.id,
+          product_name: item.name,
+          product_img: item.img || '',
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        total_amount: grandTotal,
+        shipping_amount: shipping,
+        tax_amount: tax,
+        payment_method: form.paymentMethod,
+        full_name: form.name,
+        email: form.email,
+        phone: form.phone,
+        address: form.address,
+        city: form.city,
+        state: form.state,
+        pincode: form.pincode,
+      }
+      const order = await placeOrder(orderData)
+      setOrderId(order.id)
+      setOrderTotal(grandTotal)
       clearCart()
-    }, 1500)
+      setOrderPlaced(true)
+    } catch (err) {
+      setApiError(err.response?.data?.detail || 'Failed to place order. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (cartItems.length === 0 && !orderPlaced) {
@@ -71,10 +105,14 @@ export default function Checkout() {
           Thank you for your order. We'll send a confirmation to <span className="text-[#8b5e3c] font-medium">{form.email}</span>.
         </p>
         <div className="bg-[#f6f2ee] rounded-xl p-4 text-sm text-gray-500 space-y-1">
-          <p>Order Total: <span className="font-semibold text-[#333]">₹{grandTotal.toLocaleString('en-IN')}</span></p>
+          {orderId && <p>Order ID: <span className="font-semibold text-[#333]">#ORD-{String(orderId).padStart(4, '0')}</span></p>}
+          <p>Order Total: <span className="font-semibold text-[#333]">₹{orderTotal.toLocaleString('en-IN')}</span></p>
           <p>Payment: <span className="font-semibold text-[#333]">{form.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment'}</span></p>
         </div>
-        <Link to="/" className="btn-primary text-sm px-8 inline-block">Back to Home</Link>
+        <div className="flex gap-3 justify-center">
+          <button onClick={() => navigate('/dashboard', { state: { tab: 'orders' } })} className="btn-outline text-sm px-6">View Orders</button>
+          <Link to="/" className="btn-primary text-sm px-8 inline-block">Back to Home</Link>
+        </div>
       </div>
     </div>
   )
@@ -88,6 +126,12 @@ export default function Checkout() {
           <h1 className="text-3xl font-semibold text-[#333] mt-1">Complete Your Order</h1>
         </div>
 
+        {apiError && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg">
+            ⚠️ {apiError}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="flex flex-col lg:flex-row gap-8">
 
@@ -98,15 +142,14 @@ export default function Checkout() {
               <div className="bg-white rounded-2xl p-6 sm:p-8 space-y-5">
                 <h2 className="font-semibold text-[#333] text-lg">Delivery Information</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
                   {[
-                    { name: 'name',    label: 'Full Name',     icon: FiUser,   placeholder: 'John Doe',           col: 'sm:col-span-2' },
-                    { name: 'email',   label: 'Email Address', icon: FiMail,   placeholder: 'you@example.com',    col: '' },
-                    { name: 'phone',   label: 'Phone Number',  icon: FiPhone,  placeholder: '9876543210',         col: '' },
-                    { name: 'address', label: 'Street Address',icon: FiMapPin, placeholder: '123, MG Road',       col: 'sm:col-span-2' },
-                    { name: 'city',    label: 'City',          icon: null,     placeholder: 'Mumbai',             col: '' },
-                    { name: 'state',   label: 'State',         icon: null,     placeholder: 'Maharashtra',        col: '' },
-                    { name: 'pincode', label: 'Pincode',       icon: null,     placeholder: '400001',             col: '' },
+                    { name: 'name',    label: 'Full Name',     icon: FiUser,   placeholder: 'John Doe',        col: 'sm:col-span-2' },
+                    { name: 'email',   label: 'Email Address', icon: FiMail,   placeholder: 'you@example.com', col: '' },
+                    { name: 'phone',   label: 'Phone Number',  icon: FiPhone,  placeholder: '9876543210',      col: '' },
+                    { name: 'address', label: 'Street Address',icon: FiMapPin, placeholder: '123, MG Road',    col: 'sm:col-span-2' },
+                    { name: 'city',    label: 'City',          icon: null,     placeholder: 'Mumbai',          col: '' },
+                    { name: 'state',   label: 'State',         icon: null,     placeholder: 'Maharashtra',     col: '' },
+                    { name: 'pincode', label: 'Pincode',       icon: null,     placeholder: '400001',          col: '' },
                   ].map(field => (
                     <div key={field.name} className={field.col}>
                       <label className="block text-sm font-medium text-[#333] mb-1.5">{field.label}</label>
@@ -133,8 +176,8 @@ export default function Checkout() {
                 <h2 className="font-semibold text-[#333] text-lg">Payment Method</h2>
                 <div className="space-y-3">
                   {[
-                    { value: 'cod',    label: 'Cash on Delivery',  desc: 'Pay when your order arrives' },
-                    { value: 'online', label: 'Online Payment',     desc: 'UPI, Cards, Net Banking (Coming Soon)' },
+                    { value: 'cod',    label: 'Cash on Delivery', desc: 'Pay when your order arrives' },
+                    { value: 'online', label: 'Online Payment',    desc: 'UPI, Cards, Net Banking (Coming Soon)' },
                   ].map(method => (
                     <label key={method.value}
                       className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${

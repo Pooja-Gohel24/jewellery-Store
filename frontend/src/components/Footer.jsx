@@ -31,7 +31,7 @@ export default function Footer() {
         <div>
           <h4 className="text-white font-medium mb-4">Quick Links</h4>
           <ul className="space-y-2 text-sm">
-            {[['/', 'Home'], ['/shop', 'Collections'], ['/about', 'About Us'], ['/contact', 'Contact']].map(([to, label]) => (
+            {[['/', 'Home'], ['/shop', 'Collections'], ['/dashboard', 'My Account'], ['/cart', 'Cart']].map(([to, label]) => (
               <li key={to}>
                 <Link to={to} className="hover:text-[#8b5e3c] transition-colors">{label}</Link>
               </li>
@@ -43,8 +43,10 @@ export default function Footer() {
         <div>
           <h4 className="text-white font-medium mb-4">Categories</h4>
           <ul className="space-y-2 text-sm">
-            {['Rings', 'Necklaces', 'Bracelets', 'Earrings', 'Watches'].map(item => (
-              <li key={item} className="hover:text-[#8b5e3c] transition-colors cursor-pointer">{item}</li>
+            {['Rings', 'Necklaces', 'Bracelets', 'Earrings'].map(item => (
+              <li key={item}>
+                <Link to={`/shop?category=${item}`} className="hover:text-[#8b5e3c] transition-colors cursor-pointer">{item}</Link>
+              </li>
             ))}
           </ul>
         </div>

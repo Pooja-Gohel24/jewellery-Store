@@ -9,6 +9,7 @@ class ProductResponse(BaseModel):
     original_price: float
     rating: float
     reviews: int
+    stock: int
     img: str
     badge: str
     description: str
@@ -23,6 +24,7 @@ class ProductCreate(BaseModel):
     original_price: float
     rating: float = 0.0
     reviews: int = 0
+    stock: int = 100
     img: str
     badge: str = ""
     description: str
@@ -34,6 +36,7 @@ class ProductUpdate(BaseModel):
     original_price: Optional[float] = None
     rating: Optional[float] = None
     reviews: Optional[int] = None
+    stock: Optional[int] = None
     img: Optional[str] = None
     badge: Optional[str] = None
     description: Optional[str] = None

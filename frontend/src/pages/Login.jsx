@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn } from 'react-icons/fi'
 import { GiGemPendant } from 'react-icons/gi'
@@ -7,6 +7,8 @@ import { GiGemPendant } from 'react-icons/gi'
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const successMessage = location.state?.message || ''
 
   const [form, setForm] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
@@ -96,6 +98,12 @@ export default function Login() {
               <p className="text-gray-400 text-sm mt-1">Enter your credentials to access your account</p>
             </div>
 
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg flex items-center gap-2">
+                <span>✅</span> {successMessage}
+              </div>
+            )}
+
             {apiError && (
               <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg flex items-center gap-2">
                 <span>⚠️</span> {apiError}
@@ -123,7 +131,9 @@ export default function Login() {
               <div>
                 <div className="flex justify-between mb-1.5">
                   <label className="text-sm font-medium text-[#333]">Password</label>
-                  <span className="text-xs text-[#8b5e3c] hover:underline cursor-pointer">Forgot password?</span>
+                  <span className="text-xs text-[#8b5e3c] hover:underline cursor-pointer">
+                    <Link to="/forgot-password" className="text-xs text-[#8b5e3c] hover:underline">Forgot password?</Link>
+                  </span>
                 </div>
                 <div className="relative">
                   <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />

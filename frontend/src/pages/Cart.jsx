@@ -96,7 +96,7 @@ export default function Cart() {
                   <span>GST (3%)</span>
                   <span>₹{tax.toLocaleString('en-IN')}</span>
                 </div>
-                {shipping > 0 && (
+                {shipping > 0 && totalPrice < 50000 && (
                   <p className="text-xs text-[#8b5e3c] bg-[#f6f2ee] px-3 py-2 rounded-lg">
                     Add ₹{(50000 - totalPrice).toLocaleString('en-IN')} more for FREE shipping!
                   </p>

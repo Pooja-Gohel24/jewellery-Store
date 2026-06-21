@@ -5,8 +5,10 @@ from typing import List
 from app.database import get_db
 from app.models.user import User
 from app.models.product import Product
+from app.models.order import Order
 from app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
 from app.schemas.user import UserResponse
+from app.schemas.order import OrderResponse, OrderStatusUpdate
 from app.services.auth import decode_access_token
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -23,31 +25,24 @@ def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)
     return user
 
 
-@router.get("/setup-admin")
-def setup_admin(db: Session = Depends(get_db)):
+@router.post("/setup-admin", include_in_schema=False)
+def setup_admin(secret: str, db: Session = Depends(get_db)):
+    """Protected setup endpoint - requires secret query param."""
+    from app.config import settings
+    expected = settings.ADMIN_SETUP_SECRET
+    if not expected or secret != expected:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid secret")
     from app.services.auth import hash_password
-    from sqlalchemy import text
-    # Add is_admin column if it doesn't exist
-    try:
-        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE"))
-        db.commit()
-    except Exception:
-        db.rollback()
     email = "admin@jewellery.com"
     existing = db.query(User).filter(User.email == email).first()
     if existing:
-        db.execute(text(f"UPDATE users SET is_admin = TRUE WHERE email = '{email}'"))
+        existing.is_admin = True
         db.commit()
-        return {"message": "Admin already exists", "email": email, "password": "Admin@123"}
-    admin = User(
-        name="Admin",
-        email=email,
-        hashed_password=hash_password("Admin@123"),
-        is_admin=True
-    )
+        return {"message": "Admin already exists", "email": email}
+    admin = User(name="Admin", email=email, hashed_password=hash_password("Admin@123"), is_admin=True)
     db.add(admin)
     db.commit()
-    return {"message": "Admin created", "email": email, "password": "Admin@123"}
+    return {"message": "Admin created", "email": email}
 
 
 # Dashboard Stats
@@ -56,11 +51,12 @@ def get_stats(db: Session = Depends(get_db), admin=Depends(get_admin_user)):
     total_users = db.query(User).filter(User.is_admin == False).count()
     total_products = db.query(Product).count()
     categories = db.query(Product.category).distinct().count()
+    total_orders = db.query(Order).count()
     return {
         "total_users": total_users,
         "total_products": total_products,
         "total_categories": categories,
-        "total_orders": 0
+        "total_orders": total_orders,
     }
 
 
@@ -112,6 +108,28 @@ def delete_user(user_id: int, db: Session = Depends(get_db), admin=Depends(get_a
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.is_admin:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete admin user")
     db.delete(user)
     db.commit()
     return {"message": "User deleted"}
+
+
+# Orders management
+@router.get("/orders", response_model=List[OrderResponse])
+def get_all_orders(db: Session = Depends(get_db), admin=Depends(get_admin_user)):
+    return db.query(Order).order_by(Order.created_at.desc()).all()
+
+
+@router.put("/orders/{order_id}/status", response_model=OrderResponse)
+def update_order_status(order_id: int, payload: OrderStatusUpdate, db: Session = Depends(get_db), admin=Depends(get_admin_user)):
+    valid_statuses = {"Processing", "Shipped", "Delivered", "Cancelled"}
+    if payload.status not in valid_statuses:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Status must be one of {valid_statuses}")
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+    order.status = payload.status
+    db.commit()
+    db.refresh(order)
+    return order

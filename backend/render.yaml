@@ -7,22 +7,20 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: SECRET_KEY
-        sync: false
+        value: shimmer_jewelry_super_secret_key_2025
       - key: ALGORITHM
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: 60
       - key: DATABASE_URL
-        sync: false
-      - key: EMAIL_HOST
-        value: smtp.gmail.com
-      - key: EMAIL_PORT
-        value: 587
-      - key: EMAIL_USERNAME
-        sync: false
+        sync: false   # set in Render dashboard
       - key: EMAIL_PASSWORD
-        sync: false
+        sync: false   # Brevo API key — set in Render dashboard
       - key: EMAIL_FROM
-        sync: false
+        value: poojajgohel2@gmail.com
+      - key: EMAIL_USERNAME
+        value: poojajgohel2@gmail.com
       - key: FRONTEND_URL
-        sync: false
+        value: https://jewellery-store-tawny.vercel.app
+      - key: ADMIN_SETUP_SECRET
+        sync: false   # set in Render dashboard
